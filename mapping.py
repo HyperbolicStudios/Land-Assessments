@@ -80,4 +80,5 @@ fig.update_layout(coloraxis_colorbar=dict(title="Total Value per M2"))
 #add title and center it
 fig.update_layout(title_text='Oak Bay Property (Land and Improvement) Values per M2',title_x=0.5)
 
-fig.to_html("index.html")
+#export to html
+fig.write_html("index.html")
