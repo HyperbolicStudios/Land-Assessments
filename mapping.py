@@ -56,29 +56,42 @@ data['Address'] = data['Address'].str.title()
 #convert to wgs 84 (Required for mapping with plotly)
 data = data.to_crs("EPSG:4326")
 
-fig = px.choropleth_mapbox(data, geojson=data.geometry, locations=data.index, color="TotalValperArea",
-                                       color_continuous_scale="Viridis",
-                                       range_color=(1000, 4000),
-                                       mapbox_style="carto-positron",
+def map(data, colorby):
+    fig = px.choropleth_mapbox(data, geojson=data.geometry, locations=data.index, color=colorby,
+                                        color_continuous_scale="Viridis",
+                                        range_color=(1000, 4000),
+                                        mapbox_style="carto-positron",
 
-                                       zoom=10, center = {"lat":  48.431699, "lon": -123.319873},
-                                       opacity=.5,
-                                       custom_data = ['Address','Area','Actual Value Land Total','Actual Value Total','LandValperArea','TotalValperArea']
-                                       )
+                                        zoom=12, center = {"lat":  48.431699, "lon": -123.319873},
+                                        opacity=.5,
+                                        custom_data = ['Address','Area','Actual Value Land Total','Actual Value Total','LandValperArea','TotalValperArea']
+                                        )
 
-fig.update_traces(hovertemplate = """
-                <b>%{customdata[0]}</b><br>
-                <b>Area: </b>%{customdata[1]} M2 <br>
-                <b>Land Value: </b>%{customdata[2]} $ <br>
-                <b>Total Value: </b>%{customdata[3]} $ <br>
-                <b>Land Value per M2: </b> %{customdata[4]} $/M2 <br>
-                <b>Total Value per M2: </b> %{customdata[5]} $/M2"""
-                                                 )
-#update legend name
+    fig.update_traces(hovertemplate = """
+                    <b>%{customdata[0]}</b><br>
+                    <b>Area: </b>%{customdata[1]} M2 <br>
+                    <b>Land Value: </b>%{customdata[2]} $ <br>
+                    <b>Total Value: </b>%{customdata[3]} $ <br>
+                    <b>Land Value per M2: </b> %{customdata[4]} $/M2 <br>
+                    <b>Total Value per M2: </b> %{customdata[5]} $/M2"""
+                                                    )
+   
+ 
+    return(fig)
+fig = map(data, 'TotalValperArea')
+fig.update_layout(coloraxis_colorbar=dict(title="Assessed Value per M2"))
+
+#add title and center it
+fig.update_layout(title_text='Oak Bay (Land + Improvement) Values per M2',title_x=0.5)
+
+#export to html
+fig.write_html("total_values_per_m2.html")
+
+fig = map(data, 'LandValperArea')
 fig.update_layout(coloraxis_colorbar=dict(title="Total Value per M2"))
 
 #add title and center it
-fig.update_layout(title_text='Oak Bay Property (Land and Improvement) Values per M2',title_x=0.5)
+fig.update_layout(title_text='Oak Bay Land Values per M2',title_x=0.5)
 
 #export to html
-fig.write_html("index.html")
+fig.write_html("land_values_per_m2.html")
