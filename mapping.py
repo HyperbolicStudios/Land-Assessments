@@ -23,75 +23,93 @@ oak_bay_data = pd.read_csv('data/2023 Oak Bay.csv')
 #import oak bay properties
 properties = gpd.read_file('data/oak_bay_properties.geojson')
 
-#geopandas - show all data when calling head
-#pd.set_option('display.max_columns', None)
 
-#make address all upercase
-properties['StreetName'] = properties['StreetName'].str.upper()
-#create pd column of Address Combined that combined StreetNumber and StreetName
-properties['AddressCombined'] = properties['StreetNumber'].astype(str) + ' ' + properties['StreetName']
 
-#reduce df to just AddressCombined, PostalCode, City and geometry
-properties = properties[[ 'City','PostalCode', 'AddressCombined',  'geometry']]
+def generate_maps(properties, assessments_df):
 
-#merge with oak bay data on AddressCombined and Situs Street Address
-data = properties.merge(oak_bay_data, left_on='AddressCombined', right_on='Situs Street Address', how='left')
-data = data.rename(columns={'Situs Street Address': 'Address'})
+    #ge`opandas - show all data when calling head
+    #pd.set_option('display.max_columns', None)
 
-#convert to UTM zone 10n crs
-data = data.to_crs("32610")
+    #make address all upercase
+    properties['StreetName'] = properties['StreetName'].str.upper()
+    #create pd column of Address Combined that combined StreetNumber and StreetName
+    properties['AddressCombined'] = properties['StreetNumber'].astype(str) + ' ' + properties['StreetName']
 
-#create column Area1 that is the area of the polygon
-data['Area'] = data['geometry'].area
+    #print number of rows
+    print('Number of rows: ' + str(len(properties.index)))
+    #reduce df to just AddressCombined, City and geometry
+    properties = properties[[ 'City', 'AddressCombined',  'geometry']]
 
-#create landval-per-area column and round the result
+    #dissolve shapes with the same AddressCombined
+    properties = properties.dissolve(by='AddressCombined')
 
-data['LandValperArea'] = (data['Actual Value Land Total'] / data['Area']).round(0)
+    #print number of rows
+    print('Number of rows: ' + str(len(properties.index)))
+    
+    #dissolve assessment_df by Situs Street Address, sum the Actual Value Land Total and Actual Value Total columns, and keep all other columns as first
+    assessments_df = assessments_df.groupby('Situs Street Address').agg({'Actual Value Land Total': 'sum', 'Actual Value Total': 'sum'}).reset_index()
 
-data['TotalValperArea'] = (data['Actual Value Total'] / data['Area']).round(0)
-data['Area'] = data['Area'].round(0)
+    #merge with oak bay data on AddressCombined and Situs Street Address
+    data = properties.merge(assessments_df, left_on='AddressCombined', right_on='Situs Street Address', how='left')
+    data = data.rename(columns={'Situs Street Address': 'Address'})
 
-#make address Title Case
-data['Address'] = data['Address'].str.title()
-#convert to wgs 84 (Required for mapping with plotly)
-data = data.to_crs("EPSG:4326")
+    #convert to UTM zone 10n crs
+    data = data.to_crs("32610")
 
-def map(data, colorby):
-    fig = px.choropleth_mapbox(data, geojson=data.geometry, locations=data.index, color=colorby,
-                                        color_continuous_scale="Viridis",
-                                        range_color=(1000, 4000),
-                                        mapbox_style="carto-positron",
+    #create column Area1 that is the area of the polygon
+    data['Area'] = data['geometry'].area
 
-                                        zoom=12, center = {"lat":  48.431699, "lon": -123.319873},
-                                        opacity=.5,
-                                        custom_data = ['Address','Area','Actual Value Land Total','Actual Value Total','LandValperArea','TotalValperArea']
-                                        )
+    #create landval-per-area column and round the result
 
-    fig.update_traces(hovertemplate = """
-                    <b>%{customdata[0]}</b><br>
-                    <b>Area: </b>%{customdata[1]} M2 <br>
-                    <b>Land Value: </b>%{customdata[2]} $ <br>
-                    <b>Total Value: </b>%{customdata[3]} $ <br>
-                    <b>Land Value per M2: </b> %{customdata[4]} $/M2 <br>
-                    <b>Total Value per M2: </b> %{customdata[5]} $/M2"""
-                                                    )
-   
- 
-    return(fig)
-fig = map(data, 'TotalValperArea')
-fig.update_layout(coloraxis_colorbar=dict(title="Assessed Value per M2"))
+    data['LandValperArea'] = (data['Actual Value Land Total'] / data['Area']).round(0)
 
-#add title and center it
-fig.update_layout(title_text='Oak Bay (Land + Improvement) Values per M2',title_x=0.5)
+    data['TotalValperArea'] = (data['Actual Value Total'] / data['Area']).round(0)
+    data['Area'] = data['Area'].round(0)
 
-#export to html
-fig.write_html("total_values_per_m2.html")
+    #make address Title Case
+    data['Address'] = data['Address'].str.title()
+    #convert to wgs 84 (Required for mapping with plotly)
+    data = data.to_crs("EPSG:4326")
 
-fig = map(data, 'LandValperArea')
-fig.update_layout(coloraxis_colorbar=dict(title="Total Value per M2"))
+    def map(data, colorby):
+        fig = px.choropleth_mapbox(data, geojson=data.geometry, locations=data.index, color=colorby,
+                                            color_continuous_scale="Viridis",
+                                            range_color=(1000, 4000),
+                                            mapbox_style="carto-positron",
 
-#add title and center it
-fig.update_layout(title_text='Oak Bay Land Values per M2',title_x=0.5)
+                                            zoom=12, center = {"lat":  48.431699, "lon": -123.319873},
+                                            opacity=.5,
+                                            custom_data = ['Address','Area','Actual Value Land Total','Actual Value Total','LandValperArea','TotalValperArea']
+                                            )
 
-#export to html
-fig.write_html("land_values_per_m2.html")
+        fig.update_traces(marker_line_width=.01,
+                        hovertemplate = """
+                        <b>%{customdata[0]}</b><br>
+                        <b>Area: </b>%{customdata[1]} M2 <br>
+                        <b>Land Value: </b>%{customdata[2]} $ <br>
+                        <b>Total Value: </b>%{customdata[3]} $ <br>
+                        <b>Land Value per M2: </b> %{customdata[4]} $/M2 <br>
+                        <b>Total Value per M2: </b> %{customdata[5]} $/M2"""
+                                                        )
+    
+    
+        return(fig)
+    fig = map(data, 'TotalValperArea')
+    fig.update_layout(coloraxis_colorbar=dict(title="Assessed Value per M2"))
+
+    #add title and center it
+    fig.update_layout(title_text='Oak Bay (Land + Improvement) Values per M2',title_x=0.5)
+
+    #export to html
+    fig.write_html("total_values_per_m2.html")
+
+    fig = map(data, 'LandValperArea')
+    fig.update_layout(coloraxis_colorbar=dict(title="Total Value per M2"))
+
+    #add title and center it
+    fig.update_layout(title_text='Oak Bay Land Values per M2',title_x=0.5)
+
+    #export to html
+    fig.write_html("land_values_per_m2.html")
+
+generate_maps(properties, oak_bay_data)
