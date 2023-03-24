@@ -147,6 +147,24 @@ iframe {
 
 }
 
+#selection > div {
+  display: none;
+}
+
+/*for mobile*/
+@media only screen and (max-width: 600px) {
+  #selection {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    margin: 0px 5% 0px 5%;
+  }
+
+  #selection > div {
+    display: block;
+  }
+}
+
 #selection > * {
   margin: 0px .5% 0px .5%;
   height: 40px;
