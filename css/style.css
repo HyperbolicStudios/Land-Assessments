@@ -17,7 +17,7 @@ body {
 h1 {
   margin-left: 3%;
   text-align: center;
-  font-size: 25px;
+  font-size: 19px;
   margin-bottom: 10px;
 }
 
@@ -148,7 +148,7 @@ iframe {
 }
 
 #selection > * {
-  margin: 0px 10px 0px 10px;
+  margin: 0px 1% 0px 1%;
   height: 40px;
 }
 

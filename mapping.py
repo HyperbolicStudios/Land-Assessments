@@ -91,23 +91,18 @@ def generate_maps(properties, assessments_df):
                         <b>Land Value per M2: </b> %{customdata[4]} $/M2 <br>
                         <b>Total Value per M2: </b> %{customdata[5]} $/M2"""
                                                         )
-    
+        #remove margin around plot
+        fig.update_layout(margin={"r":0,"t":30,"l":0,"b":0})
     
         return(fig)
     fig = map(data, 'TotalValperArea')
-    fig.update_layout(coloraxis_colorbar=dict(title="Assessed Value per M2"))
-
-    #add title and center it
-    fig.update_layout(title_text='Oak Bay (Land + Improvement) Values per M2',title_x=0.5)
+    fig.update_layout(coloraxis_colorbar=dict(title="Value/M2"))
 
     #export to html
     fig.write_html("total_values_per_m2.html")
 
     fig = map(data, 'LandValperArea')
-    fig.update_layout(coloraxis_colorbar=dict(title="Total Value per M2"))
-
-    #add title and center it
-    fig.update_layout(title_text='Oak Bay Land Values per M2',title_x=0.5)
+    fig.update_layout(coloraxis_colorbar=dict(title="Value/M2"))
 
     #export to html
     fig.write_html("land_values_per_m2.html")

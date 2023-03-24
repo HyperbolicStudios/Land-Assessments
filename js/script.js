@@ -48,9 +48,13 @@ function update(sel) {
   
   if ($(sel).text() == "Land Values") {
   selected_mode = "land_values_per_m2";
+  //change h1 with id chart-title to "Land Values"
+  $('#chart_title').text("Oak Bay Land Values per M2");
 }
 else {
   selected_mode = "total_values_per_m2";
+  //change h1 with id chart-title to "Total Values"
+  $('#chart_title').text("Oak Bay Total (Land + Improvement) Values per M2");
 }
   swapMap();
 
