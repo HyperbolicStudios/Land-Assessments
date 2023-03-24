@@ -148,7 +148,7 @@ iframe {
 }
 
 #selection > * {
-  margin: 0px 1% 0px 1%;
+  margin: 0px .5% 0px .5%;
   height: 40px;
 }
 
